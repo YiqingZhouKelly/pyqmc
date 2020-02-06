@@ -8,6 +8,24 @@ def is_complex(wf):
     cond3 = hasattr(wf, "wf2") and is_complex(wf.wf2)
     return cond1 or cond2 or cond3
 
+def test_mask(wf, e, epos, mask=None):
+    # testvalue
+    num_e = len(wf.value()[1])
+    if mask is None:
+        mask = np.random.randint(0,2,num_e).astype(bool)
+    ratio = wf.testvalue(e, epos, mask)
+    ratio_ref = wf.testvalue(e, epos)[mask]
+    assert(all(ratio == ratio_ref))
+
+    # updateinternals
+    old_value = wf.value()
+    wf.updateinternals(e, epos, [False]*num_e)
+    new_value = wf.value()
+    assert all(new_value[0] == old_value[0])
+    assert all(new_value[1] == old_value[1])
+    print("test cases for mask are passed")
+    
+    
 
 def test_updateinternals(wf, configs):
     """
@@ -233,10 +251,13 @@ if __name__ == "__main__":
             d.update({"step": i})
         df.extend(res)
     print("testing gradient: errors\n", pd.DataFrame(df))
-    quit()
     for i in range(5):
         configs = OpenConfigs(np.random.randn(10, np.sum(mol.nelec), 3))
         print("testing gradient: errors", test_wf_gradient(wf, configs, delta=1e-5))
     for i in range(5):
         configs = OpenConfigs(np.random.randn(10, np.sum(mol.nelec), 3))
         print("testing laplacian: errors", test_wf_laplacian(wf, configs, delta=1e-5))
+    for i in range(5):
+        configs = OpenConfigs(np.random.randn(10, np.sum(mol.nelec), 3))
+        epos = configs.electron(3)
+        test_mask(wf, 2, epos)
